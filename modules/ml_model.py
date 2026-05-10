@@ -77,7 +77,7 @@ def get_recommendation(material_name, processes_list=None):
     if row:
         # quantile_id is now actually holding the K-Means cluster_id (0, 1, or 2)
         cluster_level = row[0] 
-        if cluster_level == 2:  # High-impact cluster
+        if cluster_level == 1:  # High-impact cluster
             conn = get_db_connection()
             cursor = conn.cursor()
             # Find an alternative from the safest cluster (Cluster 0)

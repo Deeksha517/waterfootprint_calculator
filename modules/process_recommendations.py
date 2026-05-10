@@ -38,7 +38,8 @@ PROCESS_RECOMMENDATIONS = {
         "Screen Printing": "Digital Printing recommended for Viscose"
     },
     "Wool": {
-        "Bleach Wash": "Avoid Bleach Wash; use Bio-Polishing",
-        "Screen Printing": "Digital Printing is more water-efficient for wool"
+            "Bleach Wash": "Avoid Bleach Wash; use Ozone Wash or Protease treatment",
+            "Screen Printing": "Digital Printing is more water-efficient for wool"
+        }
     }
-}
+

@@ -1,7 +1,7 @@
 # modules/ml_model.py
 import sqlite3, os
 import pandas as pd
-from sklearn.cluster import KMeans, AgglomerativeClustering
+from sklearn.cluster import KMeans
 from sklearn.linear_model import LinearRegression
 from .process_recommendations import PROCESS_RECOMMENDATIONS
 
@@ -12,9 +12,9 @@ def get_db_connection():
 
 def train_hybrid_models():
     """
-    Trains the K-Means Clustering and Linear Regression models.
-    K-Means is used for sustainability categorization (0=Best, 1=Avg, 2=Worst).
-    Regression is used to predict the total water footprint based on component rates.
+    Train hybrid ML models:
+    - KMeans clustering for sustainability categorization (0=Low, 1=Medium, 2=High impact).
+    - Linear Regression for predictive analytics of total water footprint.
     """
     conn = get_db_connection()
     query = """
@@ -27,35 +27,34 @@ def train_hybrid_models():
     """
     df = pd.read_sql(query, conn)
     if df.empty:
-        print("Error: No data in Material_Master!")
+        print("❌ Error: No data in Material_Master!")
         return
 
     X = df[['wf_green','wf_blue','wf_grey']]
 
-    # --- TRUE MACHINE LEARNING: KMeans clustering ---
-    # We use 3 clusters to differentiate between Low, Medium, and High impact materials.
+    # --- KMeans clustering ---
     kmeans = KMeans(n_clusters=3, random_state=42, n_init=10)
     df['kmeans_label'] = kmeans.fit_predict(X)
-    
-    # CRITICAL: Sort clusters by mean total footprint to ensure labels are consistent:
-    # 0 = Best (Low impact), 1 = Average (Medium impact), 2 = Worst (High impact)
+
+    # Sort clusters by mean total footprint to ensure consistent labeling
     cluster_means = df.groupby('kmeans_label')['total_wf'].mean().sort_values()
     mapping = {old:new for new,old in enumerate(cluster_means.index)}
     df['cluster_id'] = df['kmeans_label'].map(mapping)
 
-    # --- Regression model (train & save coefficients) ---
-    # Used for predictive analytics of the water footprint build-up.
+    # --- Regression model ---
     reg = LinearRegression()
     reg.fit(X, df['total_wf'])
     coef = list(reg.coef_)
     intercept = reg.intercept_
 
     # --- Save results to Cluster_Map ---
-    # We save 'cluster_id' into the database for real-time recommendation retrieval.
     data_to_save = list(zip(df['material_name'], df['cluster_id']))
-    conn.executemany('INSERT OR REPLACE INTO Cluster_Map (material_name, quantile_id) VALUES (?, ?)', data_to_save)
+    conn.executemany(
+        'INSERT OR REPLACE INTO Cluster_Map (material_name, quantile_id) VALUES (?, ?)',
+        data_to_save
+    )
 
-    # --- Save results to Regression_Model ---
+    # --- Save regression coefficients ---
     conn.execute('''
         CREATE TABLE IF NOT EXISTS Regression_Model (
             id INTEGER PRIMARY KEY,
@@ -66,55 +65,66 @@ def train_hybrid_models():
         )
     ''')
     conn.execute('DELETE FROM Regression_Model')
-    conn.execute('INSERT INTO Regression_Model (coef_green,coef_blue,coef_grey,intercept) VALUES (?,?,?,?)',
-                 (coef[0],coef[1],coef[2],intercept))
+    conn.execute(
+        'INSERT INTO Regression_Model (coef_green,coef_blue,coef_grey,intercept) VALUES (?,?,?,?)',
+        (coef[0],coef[1],coef[2],intercept)
+    )
 
     conn.commit()
     conn.close()
-    print("✅ Hybrid models trained: K-Means clusters successfully wired to database.")
+    print("✅ Hybrid models trained: KMeans clusters + Regression wired to DB.")
 
 def get_recommendation(material_name, processes_list=None):
-    # --- Step 1: Material suggestion from ML clusters ---
+    # Normalize material name
+    material_name = material_name.strip()
+
+    # --- Step 1: Material suggestion ---
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT quantile_id FROM Cluster_Map WHERE material_name=?", (material_name,))
     row = cursor.fetchone()
     conn.close()
 
-    material_suggestion = "✅ Current material is acceptable"
+    quantile_label = None
     if row:
-        quantile_id = row[0]
-        if quantile_id == 2:  # high-impact material
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            # Instead of LIMIT 1, fetch ALL low-impact materials and pick one different from current
-            cursor.execute("SELECT material_name FROM Cluster_Map WHERE quantile_id=0 AND material_name != ?", (material_name,))
-            alt = cursor.fetchone()
-            conn.close()
-            if alt:
-                material_suggestion = f"🌿 Recommendation: Switch to {alt[0]}"
+        quantile_label = row[0]
+
+    # Debug logging
+    print(f"DEBUG: Material={material_name}, quantile_id={quantile_label}")
+
+    impact_map = {0: "Low impact", 1: "Medium impact", 2: "High impact"}
+    impact_text = impact_map.get(quantile_label, "Unknown impact")
+
+    if quantile_label == 2:  # high-impact
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT material_name FROM Cluster_Map WHERE quantile_id=0 AND material_name != ?", (material_name,))
+        alt = cursor.fetchone()
+        conn.close()
+        if alt:
+            material_suggestion = f"{material_name} ({impact_text}): 🌿 Recommendation: Switch to {alt[0]}"
+        else:
+            material_suggestion = f"{material_name} ({impact_text}): 🌿 High impact material, consider alternatives"
+    elif quantile_label is not None:
+        material_suggestion = f"{material_name} ({impact_text}): ✅ Current material is acceptable"
+    else:
+        material_suggestion = f"{material_name}: ⚠️ No quantile data found, retrain models!"
 
     # --- Step 2: Process suggestions ---
     process_suggestions = []
     if processes_list:
-        # Check if material has specific process rules
         if material_name in PROCESS_RECOMMENDATIONS:
             for proc in processes_list:
                 if proc in PROCESS_RECOMMENDATIONS[material_name]:
-                    process_suggestions.append(PROCESS_RECOMMENDATIONS[material_name][proc])
-        else:
-            # Fallback: generic process rules (optional)
-            for proc in processes_list:
-                if "Screen Printing" in proc:
-                    process_suggestions.append("Prefer Digital Printing for lower water use")
-                elif "Bleach Wash" in proc:
-                    process_suggestions.append("Avoid Bleach Wash; prefer Enzyme Wash")
+                    suggestion = PROCESS_RECOMMENDATIONS[material_name][proc]
+                    if not suggestion.lower().startswith(("avoid", "prefer", "use", "switch")):
+                        suggestion = "Recommendation: " + suggestion
+                    process_suggestions.append(suggestion)
 
     # --- Step 3: Combine ---
     if process_suggestions:
-        return f"{material_suggestion}; " + "; ".join(process_suggestions)
+        return "; ".join([material_suggestion] + process_suggestions)
     return material_suggestion
-
 
 def predict_footprint(green, blue, grey):
     """Predict total water footprint using regression model coefficients."""

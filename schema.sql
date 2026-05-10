@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS Transaction_Log (
 -- ---------------------------------------------------------
 CREATE TABLE IF NOT EXISTS Cluster_Map (
     material_name TEXT PRIMARY KEY,
-    cluster_id INTEGER NOT NULL CHECK(cluster_id >= 0)
+    quantile_id INTEGER NOT NULL CHECK(quantile_id >= 0)
 );
 
 

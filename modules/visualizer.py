@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
+matplotlib.use('Agg')  # This is CRITICAL for cloud deployment
+
 
 def apply_dark_theme(ax, fig):
     fig.patch.set_facecolor('#1e1e1e')

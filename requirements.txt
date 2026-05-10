@@ -1,8 +1,6 @@
 Flask
 scikit-learn
 pandas
-sqlite3
-flask-bcrypt
 matplotlib
 numpy
 gunicorn

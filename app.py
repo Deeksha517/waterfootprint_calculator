@@ -65,7 +65,10 @@ def index():
         elif "calculate" in request.form:
             material = request.form.get("material")
             weight = float(request.form.get("weight", 1.0))
-            selected_procs = request.form.getlist("processes")
+
+            # FIX: parse hidden input correctly
+            proc_string = request.form.get("processes", "")
+            selected_procs = [p.strip() for p in proc_string.split(",") if p.strip()]
 
             result = build_product(material, weight, selected_procs)
             rec = get_recommendation(material, selected_procs)
@@ -84,6 +87,7 @@ def index():
             temp_log = session["log"]
             temp_log.append(new_entry)
             session["log"] = temp_log
+
 
         # ACTION: Export current session data to a CSV file
         elif "export_csv" in request.form:

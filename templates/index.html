@@ -1,366 +1,190 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Water Footprint Assessment Tool</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        /* Streamlit Dark Theme Exact Colors */
-        :root {
-            --bg-main: #0e1117;
-            --bg-sidebar: #262730;
-            --text-main: #fafafa;
-            --text-muted: #a3a8b8;
-            --border-color: rgba(250, 250, 250, 0.2);
-            --input-bg: #0e1117;
-            --success-bg: rgba(23, 114, 51, 0.4);
-            --success-text: #50cd89;
-            --info-bg: rgba(28, 131, 225, 0.2);
-            --info-text: #60a5fa;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Water Footprint Assessment Tool</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
-        body {
-            background-color: var(--bg-main);
-            color: var(--text-main);
-            font-family: "Source Sans Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            margin: 0;
-            display: flex;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
+<style>
+:root {
+  --bg-main: #0e1117;
+  --bg-sidebar: #262730;
+  --text-main: #fafafa;
+  --text-muted: #a3a8b8;
+  --border-color: rgba(250, 250, 250, 0.2);
+  --input-bg: #0e1117;
+  --success-text: #50cd89;
+}
 
-        /* Sidebar Styling */
-        .st-sidebar {
-            width: 330px;
-            background-color: var(--bg-sidebar);
-            padding: 2rem 1.5rem;
-            flex-shrink: 0;
-            min-height: 100vh;
-        }
+body {
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  font-family: "Source Sans Pro", Roboto, sans-serif;
+  margin: 0;
+  display: flex;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
 
-        .st-sidebar h5 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 1.5rem;
-        }
+/* Sidebar Styling */
+.st-sidebar {
+  width: 80%; /* expanded */
+  background-color: var(--bg-sidebar);
+  padding: 2rem 1.5rem;
+  flex-shrink: 0;
+  min-height: 100vh;
+}
 
-        .st-sidebar label {
-            font-size: 0.85rem;
-            color: var(--text-main);
-            margin-bottom: 0.4rem;
-        }
+.st-sidebar h5 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+}
 
-        /* Main Content Styling */
-        .st-main {
-            flex-grow: 1;
-            padding: 3rem 4rem;
-            max-width: calc(100vw - 330px);
-        }
+.st-main {
+  flex-grow: 1;
+  padding: 3rem 4rem;
+  max-width: calc(100vw - 80%);
+}
 
-        h1 {
-            font-weight: 700;
-            font-size: 2.5rem;
-            margin-bottom: 2rem;
-        }
+.form-control, .form-select {
+  background-color: var(--input-bg);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 0.95rem;
+}
 
-        h3 {
-            font-weight: 600;
-            font-size: 1.5rem;
-            margin-top: 1.5rem;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-        }
+.btn-st {
+  background-color: var(--bg-sidebar);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 0.4rem 1rem;
+}
 
-        /* Inputs & Buttons */
-        .form-control, .form-select {
-            background-color: var(--input-bg);
-            color: var(--text-main);
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            font-size: 0.95rem;
-        }
-        
-        .form-control:focus, .form-select:focus {
-            background-color: var(--input-bg);
-            color: var(--text-main);
-            border-color: #ff4b4b; 
-            box-shadow: none;
-        }
+.btn-st:hover {
+  border-color: #ff4b4b;
+  color: #ff4b4b;
+}
 
-        .btn-st {
-            background-color: var(--bg-sidebar);
-            color: var(--text-main);
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            padding: 0.4rem 1rem;
-            transition: all 0.2s;
-        }
-
-        .btn-st:hover {
-            border-color: #ff4b4b;
-            color: #ff4b4b;
-            background-color: var(--bg-sidebar);
-        }
-
-        /* Alerts */
-        .st-alert-success {
-            background-color: var(--success-bg);
-            color: #ffffff;
-            border-radius: 4px;
-            padding: 1rem;
-            margin-bottom: 2rem;
-            border-left: 4px solid var(--success-text);
-        }
-
-        .st-alert-info {
-            background-color: var(--info-bg);
-            color: var(--text-main);
-            border-radius: 4px;
-            padding: 1rem;
-            margin-top: 1.5rem;
-            border-left: 4px solid var(--info-text);
-        }
-
-        /* Table Styling */
-        .table-dark {
-            background-color: transparent;
-            --bs-table-bg: transparent;
-            border: 1px solid var(--border-color);
-        }
-        .table-dark th {
-            color: var(--text-muted);
-            font-size: 0.8rem;
-            font-weight: normal;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .table-dark td {
-            font-size: 0.9rem;
-            border-bottom: 1px solid rgba(250, 250, 250, 0.05);
-        }
-        .table-hover>tbody>tr:hover>* {
-            color: var(--text-main);
-            background-color: rgba(250, 250, 250, 0.05);
-        }
-        
-        .btn-delete-row {
-            background: transparent;
-            border: 1px solid rgba(255, 75, 75, 0.3);
-            color: #ff4b4b;
-            border-radius: 4px;
-            padding: 0.1rem 0.4rem;
-            font-size: 0.8rem;
-            transition: all 0.2s;
-        }
-        .btn-delete-row:hover {
-            background-color: #ff4b4b;
-            color: white;
-        }
-    </style>
+/* Recommendation colors */
+.recommend-accept { color: var(--success-text); font-weight: 500; }
+.recommend-switch { color: #ffc107; font-weight: 500; }
+</style>
 </head>
+
 <body>
-
-    <div class="st-sidebar">
-        <h5>Configure Product</h5>
-        <form method="POST" action="/">
-            <div class="mb-3">
-                <label>Select Material</label>
-                <select name="material" class="form-select" required>
-                    {% for m in materials %}
-                    <option value="{{ m }}">{{ m }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            
-            <div class="mb-3">
-                <label>Enter weight in kg</label>
-                <input type="number" step="0.1" name="weight" class="form-control" value="1.0" required>
-            </div>
-            
-            <div class="mb-4">
-                <label>Select Processes</label>
-                <input type="text" id="processSearch" class="form-control mb-2" placeholder="🔍 Search processes..." onkeyup="filterProcesses()">
-                
-                <select id="processSelect" name="processes" class="form-select" multiple style="height: 180px;">
-                    {% for p in processes %}
-                    <option value="{{ p }}">{{ p }}</option>
-                    {% endfor %}
-                </select>
-                <small class="text-muted" style="font-size: 0.75rem;">Hold Ctrl/Cmd to select multiple</small>
-            </div>
-            
-            <button type="submit" name="calculate" class="btn btn-st w-100 mb-3">Calculate & Add to Batch</button>
-            <button type="submit" name="reset" class="btn btn-st w-100" style="border-color: rgba(255, 75, 75, 0.5); color: #ff4b4b;">Clear Batch</button>
-        </form>
+<div class="st-sidebar">
+  <h5>Configure Product</h5>
+  <form method="POST" action="/">
+    <div class="mb-3">
+      <label>Select Material</label>
+      <select name="material" class="form-select" required>
+        {% for m in materials %}
+        <option value="{{ m }}">{{ m }}</option>
+        {% endfor %}
+      </select>
     </div>
 
-    <div class="st-main">
-        
-        <h1>💧 Water Footprint Calculator</h1>
+    <div class="mb-3">
+      <label>Enter weight in kg</label>
+      <input type="number" step="0.1" name="weight" class="form-control" value="1.0" required>
+    </div>
 
-        {% if session_log and session_log|length > 0 %}
-        <div class="st-alert-success">
-            Successfully calculated and added {{ session_log[-1].Material }} to the batch!
-        </div>
-        {% endif %}
+    <div class="mb-4">
+      <label>Select Processes</label>
+      <input type="text" id="processSearch" class="form-control mb-2" placeholder="🔍 Search processes..." onkeyup="filterProcesses()">
 
-        <div class="d-flex justify-content-between align-items-center mt-4 mb-2">
-            <h3 class="mb-0">📊 Session Summary</h3>
-            <form method="POST" action="/" style="margin: 0;">
-                <button type="submit" name="export_csv" class="btn btn-outline-info btn-sm">
-                    📥 Download CSV Report
-                </button>
-            </form>
+      <div id="processList" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 4px; padding: 0.5rem;">
+        {% for p in processes %}
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <span>{{ p }}</span>
+          <button type="button" class="btn btn-sm btn-outline-info" onclick="addProcess('{{ p }}')">➕</button>
         </div>
-        
-        <div class="table-responsive">
-            <table class="table table-dark table-hover align-middle">
-                <thead>
-                    <tr>
-                        <th></th> 
-                        <th>Material</th>
-                        <th>Weight (kg)</th>
-                        <th>Processes</th>
-                        <th>Green (L)</th>
-                        <th>Blue (L)</th>
-                        <th>Grey (L)</th>
-                        <th>Overhead (L)</th>
-                        <th>Total WF (L)</th>
-                        <th>Recommendation</th>
-                        <th>Action</th> 
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in session_log %}
-                    <tr>
-                        <td class="text-muted" style="width: 30px;">{{ loop.index0 }}</td>
-                        <td>{{ item.Material }}</td>
-                        <td>{{ item['Weight (kg)'] }}</td>
-                        <td>{{ item.Processes }}</td>
-                        <td>{{ item['Green (L)'] }}</td>
-                        <td>{{ item['Blue (L)'] }}</td>
-                        <td>{{ item['Grey (L)'] }}</td>
-                        <td>{{ item['Overhead (L)'] }}</td>
-                        <td>{{ item['Total WF (L)'] }}</td>
-                        <td style="min-width: 300px; white-space: normal; line-height: 1.4;">
-                            {% if item.Recommendation.startswith('✅') %}
-                                <span style="color: var(--success-text); font-weight: 500;">
-                                    {{ item.Recommendation | replace('\n', '<br>') | safe }}
-                                </span>
-                            {% elif item.Recommendation.startswith('🌿') %}
-                                <span style="color: #ffc107; font-weight: 500;">
-                                    {{ item.Recommendation | replace('\n', '<br>') | safe }}
-                                </span>
-                            {% else %}
-                                {{ item.Recommendation | replace('\n', '<br>') | safe }}
-                            {% endif %}
-                        </td>
-                        <td>
-                            <form method="POST" action="/" style="margin: 0;">
-                                <button type="submit" name="delete_index" value="{{ loop.index0 }}" class="btn-delete-row" title="Remove row">🗑️</button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            {% if not session_log %}
-            <p class="text-muted" style="font-size: 0.9rem;">No calculations yet. Add a product to begin.</p>
+        {% endfor %}
+      </div>
+
+      <input type="hidden" name="processes" id="selectedProcesses">
+      <div id="selectedList" class="mt-2 text-muted" style="font-size: 0.85rem;">
+        No processes selected yet.
+      </div>
+    </div>
+
+    <button type="submit" name="calculate" class="btn btn-st w-100 mb-3">Calculate & Add to Batch</button>
+    <button type="submit" name="reset" class="btn btn-st w-100" style="border-color: rgba(255, 75, 75, 0.5); color: #ff4b4b;">Clear Batch</button>
+  </form>
+</div>
+
+<div class="st-main">
+  <h1>💧 Water Footprint Calculator</h1>
+
+  {% if session_log and session_log|length > 0 %}
+  <div class="alert alert-success">Successfully calculated and added {{ session_log[-1].Material }} to the batch!</div>
+  {% endif %}
+
+  <div class="table-responsive">
+    <table class="table table-dark table-hover align-middle">
+      <thead>
+        <tr>
+          <th>Material</th><th>Weight (kg)</th><th>Processes</th>
+          <th>Green (L)</th><th>Blue (L)</th><th>Grey (L)</th>
+          <th>Overhead (L)</th><th>Total WF (L)</th><th>Recommendation</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in session_log %}
+        <tr>
+          <td>{{ item.Material }}</td>
+          <td>{{ item['Weight (kg)'] }}</td>
+          <td>{{ item.Processes }}</td>
+          <td>{{ item['Green (L)'] }}</td>
+          <td>{{ item['Blue (L)'] }}</td>
+          <td>{{ item['Grey (L)'] }}</td>
+          <td>{{ item['Overhead (L)'] }}</td>
+          <td>{{ item['Total WF (L)'] }}</td>
+          <td>
+            {% if item.Recommendation.startswith('✅') %}
+              <span class="recommend-accept">{{ item.Recommendation }}</span>
+            {% elif item.Recommendation.startswith('🌿') %}
+              <span class="recommend-switch">{{ item.Recommendation }}</span>
+            {% else %}
+              {{ item.Recommendation }}
             {% endif %}
-        </div>
-        
-        {% if cumulative_total %}
-        <div class="st-alert-info">
-            <strong>Cumulative Batch Total Water Footprint:</strong> {{ cumulative_total }} L
-        </div>
-        {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
 
-        <h3 class="mt-5 mb-4">📈 Deep Analytical Insights</h3>
-        
-        {% if chart1 or chart2 or chart3 or chart4 %}
-        
-        <div class="card bg-dark border-secondary mb-4 shadow-sm">
-            <div class="card-body">
-                <div class="row align-items-center">
-                    <div class="col-md-8 text-center">
-                        <img src="data:image/png;base64,{{ chart2 }}" class="img-fluid rounded" alt="Stacked Chart">
-                    </div>
-                    <div class="col-md-4 text-light p-3">
-                        <h4 class="text-info border-bottom border-secondary pb-2">Pollution Profile Comparison</h4>
-                        <p class="text-muted" style="font-size: 1.1rem;"><strong>How to read:</strong> This chart normalizes all footprints to 100%. It reveals the <em>type</em> of water impact regardless of volume.</p>
-                        <p style="font-size: 1.1rem;"><strong>🎯 Key Conclusion:</strong> Natural fibers heavily rely on Green water (agriculture), while synthetic fibers dominate Grey water due to chemical processing. Modifying processes on synthetics yields the highest pollution reduction.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
+<script>
+let selected = [];
 
-        <div class="card bg-dark border-secondary mb-4 shadow-sm">
-            <div class="card-body">
-                <div class="row align-items-center">
-                    <div class="col-md-8 text-center">
-                        <img src="data:image/png;base64,{{ chart1 }}" class="img-fluid rounded" alt="Doughnut Chart">
-                    </div>
-                    <div class="col-md-4 text-light p-3">
-                        <h4 class="text-info border-bottom border-secondary pb-2">Cumulative Batch Composition</h4>
-                        <p class="text-muted" style="font-size: 1.1rem;"><strong>How to read:</strong> Displays the total aggregate water footprint of all calculated sessions combined.</p>
-                        <p style="font-size: 1.1rem;"><strong>🎯 Key Conclusion:</strong> Grey water consistently dominates mixed batches. This highlights that chemical dilution in manufacturing stages (Dyeing, Bleaching) is the primary driver of environmental impact.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
+function addProcess(proc) {
+  if (!selected.includes(proc)) {
+    selected.push(proc);
+    updateSelected();
+  }
+}
 
-        <div class="card bg-dark border-secondary mb-4 shadow-sm">
-            <div class="card-body">
-                <div class="row align-items-center">
-                    <div class="col-md-8 text-center">
-                        <img src="data:image/png;base64,{{ chart3 }}" class="img-fluid rounded" alt="Waterfall Chart">
-                    </div>
-                    <div class="col-md-4 text-light p-3">
-                        <h4 class="text-info border-bottom border-secondary pb-2">Footprint Accumulation</h4>
-                        <p class="text-muted" style="font-size: 1.1rem;"><strong>How to read:</strong> Tracks how the total batch footprint builds up sequentially across Green, Blue, Grey, and Overhead variables.</p>
-                        <p style="font-size: 1.1rem;"><strong>🎯 Key Conclusion:</strong> The massive step-up at the "Grey" stage visualizes the hidden cost of fashion. While Blue water appears manageable, the water required to neutralize toxicity (Grey) is the true bottleneck.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
+function updateSelected() {
+  document.getElementById('selectedProcesses').value = selected.join(',');
+  document.getElementById('selectedList').innerHTML = selected.length > 0 
+    ? "Selected: " + selected.join(', ')
+    : "No processes selected yet.";
+}
 
-        <div class="card bg-dark border-secondary mb-4 shadow-sm">
-            <div class="card-body">
-                <div class="row align-items-center">
-                    <div class="col-md-8 text-center">
-                        <img src="data:image/png;base64,{{ chart4 }}" class="img-fluid rounded" alt="Radar Chart">
-                    </div>
-                    <div class="col-md-4 text-light p-3">
-                        <h4 class="text-info border-bottom border-secondary pb-2">Multi-Axis Material Geometry</h4>
-                        <p class="text-muted" style="font-size: 1.1rem;"><strong>How to read:</strong> Mapped on a logarithmic scale. It shows the "shape" of a material's impact across 4 axes.</p>
-                        <p style="font-size: 1.1rem;"><strong>🎯 Key Conclusion:</strong> Sustainable fabrics maintain small, tight geometric shapes near the center. Traditional synthetics stretch the axis toward Grey water, creating unbalanced ecological profiles.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {% else %}
-        <p class="text-muted" style="font-size: 1.1rem;">Add data to the batch to generate insights.</p>
-        {% endif %}
-
-    </div>
-
-    <script>
-        function filterProcesses() {
-            let input = document.getElementById('processSearch').value.toLowerCase();
-            let select = document.getElementById('processSelect');
-            let options = select.getElementsByTagName('option');
-            
-            for (let i = 0; i < options.length; i++) {
-                let text = options[i].text.toLowerCase();
-                if (text.includes(input)) {
-                    options[i].style.display = "";
-                } else {
-                    options[i].style.display = "none";
-                }
-            }
-        }
-    </script>
+function filterProcesses() {
+  let input = document.getElementById('processSearch').value.toLowerCase();
+  let list = document.getElementById('processList').getElementsByTagName('div');
+  for (let i = 0; i < list.length; i++) {
+    let text = list[i].innerText.toLowerCase();
+    list[i].style.display = text.includes(input) ? "" : "none";
+  }
+}
+</script>
 </body>
 </html>

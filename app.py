@@ -4,9 +4,9 @@ import sqlite3
 import io
 import base64
 import csv
-import matplotlib
-matplotlib.use('Agg') 
+import matplotlib 
 import matplotlib.pyplot as plt
+matplotlib.use('Agg')  # Use non-interactive backend for Matplotlib
 
 # Import your custom modules
 from modules.product_builder import build_product

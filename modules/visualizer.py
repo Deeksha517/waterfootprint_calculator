@@ -1,6 +1,8 @@
+import matplotlib
 import matplotlib.pyplot as plt
-import numpy as np
 matplotlib.use('Agg')  # This is CRITICAL for cloud deployment
+import numpy as np
+
 
 
 def apply_dark_theme(ax, fig):

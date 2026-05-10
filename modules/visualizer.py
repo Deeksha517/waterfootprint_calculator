@@ -1,6 +1,7 @@
 import matplotlib
-import matplotlib.pyplot as plt
 matplotlib.use('Agg')  # This is CRITICAL for cloud deployment
+import matplotlib.pyplot as plt
+
 import numpy as np
 
 

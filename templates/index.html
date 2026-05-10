@@ -29,11 +29,11 @@ body {
 
 /* Sidebar Styling */
 .st-sidebar {
-  width: 330px; /* keep width */
+  width: 330px; /* fixed width */
   background-color: var(--bg-sidebar);
   padding: 2rem 1.5rem;
   flex-shrink: 0;
-  min-height: 100vh; /* full length */
+  min-height: 100vh; /* full vertical length */
 }
 
 .st-main {
@@ -62,8 +62,24 @@ body {
   color: #ff4b4b;
 }
 
+/* Recommendation colors */
 .recommend-accept { color: var(--success-text); font-weight: 500; }
 .recommend-switch { color: #ffc107; font-weight: 500; }
+
+/* Process list styling */
+.process-item {
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+.process-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+.process-item.selected {
+  background-color: rgba(80, 205, 137, 0.3); /* green highlight */
+  border-left: 3px solid #50cd89;
+}
 </style>
 </head>
 
@@ -93,8 +109,8 @@ body {
       <!-- Full list, no scroll -->
       <div id="processList" style="border: 1px solid var(--border-color); border-radius: 4px; padding: 0.5rem;">
         {% for p in processes %}
-        <div class="d-flex justify-content-between align-items-center mb-1 process-item" onclick="toggleProcess('{{ p }}')" style="cursor:pointer;">
-          <span>{{ p }}</span>
+        <div class="process-item mb-1" onclick="toggleProcess('{{ p }}')">
+          {{ p }}
         </div>
         {% endfor %}
       </div>
@@ -157,12 +173,17 @@ body {
 let selected = [];
 
 function toggleProcess(proc) {
-  if (selected.includes(proc)) {
-    // remove
-    selected = selected.filter(p => p !== proc);
-  } else {
-    // add
-    selected.push(proc);
+  const items = document.getElementsByClassName('process-item');
+  for (let i = 0; i < items.length; i++) {
+    if (items[i].innerText.trim() === proc) {
+      if (selected.includes(proc)) {
+        selected = selected.filter(p => p !== proc);
+        items[i].classList.remove('selected');
+      } else {
+        selected.push(proc);
+        items[i].classList.add('selected');
+      }
+    }
   }
   updateSelected();
 }
@@ -176,7 +197,7 @@ function updateSelected() {
 
 function filterProcesses() {
   let input = document.getElementById('processSearch').value.toLowerCase();
-  let list = document.getElementById('processList').getElementsByClassName('process-item');
+  let list = document.getElementsByClassName('process-item');
   for (let i = 0; i < list.length; i++) {
     let text = list[i].innerText.toLowerCase();
     list[i].style.display = text.includes(input) ? "" : "none";

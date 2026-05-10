@@ -29,31 +29,24 @@ body {
 
 /* Sidebar Styling */
 .st-sidebar {
-  width: 80%; /* expanded */
+  width: 330px; /* keep width */
   background-color: var(--bg-sidebar);
   padding: 2rem 1.5rem;
   flex-shrink: 0;
-  min-height: 100vh;
-}
-
-.st-sidebar h5 {
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin-bottom: 1.5rem;
+  min-height: 100vh; /* full length */
 }
 
 .st-main {
   flex-grow: 1;
   padding: 3rem 4rem;
-  max-width: calc(100vw - 80%);
+  max-width: calc(100vw - 330px);
 }
 
-.form-control, .form-select {
+.form-control {
   background-color: var(--input-bg);
   color: var(--text-main);
   border: 1px solid var(--border-color);
   border-radius: 4px;
-  font-size: 0.95rem;
 }
 
 .btn-st {
@@ -69,7 +62,6 @@ body {
   color: #ff4b4b;
 }
 
-/* Recommendation colors */
 .recommend-accept { color: var(--success-text); font-weight: 500; }
 .recommend-switch { color: #ffc107; font-weight: 500; }
 </style>
@@ -95,13 +87,14 @@ body {
 
     <div class="mb-4">
       <label>Select Processes</label>
-      <input type="text" id="processSearch" class="form-control mb-2" placeholder="🔍 Search processes..." onkeyup="filterProcesses()">
+      <input type="text" id="processSearch" class="form-control mb-2" 
+             placeholder="🔍 Search processes..." onkeyup="filterProcesses()">
 
-      <div id="processList" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 4px; padding: 0.5rem;">
+      <!-- Full list, no scroll -->
+      <div id="processList" style="border: 1px solid var(--border-color); border-radius: 4px; padding: 0.5rem;">
         {% for p in processes %}
-        <div class="d-flex justify-content-between align-items-center mb-1">
+        <div class="d-flex justify-content-between align-items-center mb-1 process-item" onclick="toggleProcess('{{ p }}')" style="cursor:pointer;">
           <span>{{ p }}</span>
-          <button type="button" class="btn btn-sm btn-outline-info" onclick="addProcess('{{ p }}')">➕</button>
         </div>
         {% endfor %}
       </div>
@@ -163,11 +156,15 @@ body {
 <script>
 let selected = [];
 
-function addProcess(proc) {
-  if (!selected.includes(proc)) {
+function toggleProcess(proc) {
+  if (selected.includes(proc)) {
+    // remove
+    selected = selected.filter(p => p !== proc);
+  } else {
+    // add
     selected.push(proc);
-    updateSelected();
   }
+  updateSelected();
 }
 
 function updateSelected() {
@@ -179,7 +176,7 @@ function updateSelected() {
 
 function filterProcesses() {
   let input = document.getElementById('processSearch').value.toLowerCase();
-  let list = document.getElementById('processList').getElementsByTagName('div');
+  let list = document.getElementById('processList').getElementsByClassName('process-item');
   for (let i = 0; i < list.length; i++) {
     let text = list[i].innerText.toLowerCase();
     list[i].style.display = text.includes(input) ? "" : "none";

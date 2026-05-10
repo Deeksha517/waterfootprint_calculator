@@ -74,11 +74,7 @@ def train_hybrid_models():
     print("✅ Hybrid models trained: K-Means clusters successfully wired to database.")
 
 def get_recommendation(material_name, processes_list=None):
-    """
-    Generates dynamic material recommendations based on ML clusters
-    and hardcoded expert process rules.
-    """
-    # --- Step 1: Material suggestion from TRUE ML clusters ---
+    # --- Step 1: Material suggestion from ML clusters ---
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT quantile_id FROM Cluster_Map WHERE material_name=?", (material_name,))
@@ -87,45 +83,38 @@ def get_recommendation(material_name, processes_list=None):
 
     material_suggestion = "✅ Current material is acceptable"
     if row:
-        # cluster_level: 0=Best, 1=Average, 2=Worst
-        cluster_level = row[0] 
-        
-        # LOGIC FIX: Trigger recommendation for BOTH Cluster 1 and Cluster 2.
-        # This ensures that materials like Cotton/Viscose (Average) still get 
-        # suggestions to move to Cluster 0 (Best/Eco-friendly).
-        if cluster_level >= 1: 
+        quantile_id = row[0]
+        if quantile_id == 2:  # high-impact material
             conn = get_db_connection()
             cursor = conn.cursor()
-            # Find an alternative from the safest category (Cluster 0)
-            cursor.execute("SELECT material_name FROM Cluster_Map WHERE quantile_id=0 LIMIT 1")
+            # Instead of LIMIT 1, fetch ALL low-impact materials and pick one different from current
+            cursor.execute("SELECT material_name FROM Cluster_Map WHERE quantile_id=0 AND material_name != ?", (material_name,))
             alt = cursor.fetchone()
             conn.close()
             if alt:
-                impact_type = "High" if cluster_level == 2 else "Moderate"
-                material_suggestion = f"🌿 Recommendation: {impact_type} Impact. Switch to {alt[0]}"
+                material_suggestion = f"🌿 Recommendation: Switch to {alt[0]}"
 
-    # --- Step 2: Robust Process suggestions (With Global Fallback) ---
+    # --- Step 2: Process suggestions ---
     process_suggestions = []
-    
-    # Global fallback rules for processes that are universally high-impact
-    GLOBAL_WARNINGS = {
-        "Bleach Wash": "Global Warning: Bleach Wash highly pollutes Grey Water. Prefer Enzyme Wash.",
-        "Desizing": "Consider eco-friendly bio-desizing to reduce chemical runoff."
-    }
-
     if processes_list:
-        for proc in processes_list:
-            # Check for material-specific rules (e.g., Polyester + Bleach)
-            if material_name in PROCESS_RECOMMENDATIONS and proc in PROCESS_RECOMMENDATIONS[material_name]:
-                process_suggestions.append(PROCESS_RECOMMENDATIONS[material_name][proc])
-            # If no specific rule exists, apply the global sustainability warning
-            elif proc in GLOBAL_WARNINGS:
-                process_suggestions.append(GLOBAL_WARNINGS[proc])
+        # Check if material has specific process rules
+        if material_name in PROCESS_RECOMMENDATIONS:
+            for proc in processes_list:
+                if proc in PROCESS_RECOMMENDATIONS[material_name]:
+                    process_suggestions.append(PROCESS_RECOMMENDATIONS[material_name][proc])
+        else:
+            # Fallback: generic process rules (optional)
+            for proc in processes_list:
+                if "Screen Printing" in proc:
+                    process_suggestions.append("Prefer Digital Printing for lower water use")
+                elif "Bleach Wash" in proc:
+                    process_suggestions.append("Avoid Bleach Wash; prefer Enzyme Wash")
 
-    # --- Step 3: Combine and return the final string ---
+    # --- Step 3: Combine ---
     if process_suggestions:
         return f"{material_suggestion}; " + "; ".join(process_suggestions)
     return material_suggestion
+
 
 def predict_footprint(green, blue, grey):
     """Predict total water footprint using regression model coefficients."""

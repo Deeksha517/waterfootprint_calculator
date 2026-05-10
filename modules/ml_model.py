@@ -53,18 +53,11 @@ def train_hybrid_models():
     coef = list(reg.coef_)
     intercept = reg.intercept_
 
-    # --- Save results ---
-    conn.execute('''
-        CREATE TABLE IF NOT EXISTS Cluster_Map (
-            material_name TEXT PRIMARY KEY,
-            cluster_id INTEGER,
-            hier_label INTEGER,
-            quantile_id INTEGER
-        )
-    ''')
-    data_to_save = list(zip(df['material_name'], df['cluster_id'], df['hier_label'], df['quantile_id']))
-    conn.executemany('INSERT OR REPLACE INTO Cluster_Map VALUES (?, ?, ?, ?)', data_to_save)
+    # --- Save results to Cluster_Map (Fixed to match 2-column schema) ---
+    data_to_save = list(zip(df['material_name'], df['quantile_id']))
+    conn.executemany('INSERT OR REPLACE INTO Cluster_Map (material_name, quantile_id) VALUES (?, ?)', data_to_save)
 
+    # --- Save results to Regression_Model ---
     conn.execute('''
         CREATE TABLE IF NOT EXISTS Regression_Model (
             id INTEGER PRIMARY KEY,
@@ -125,3 +118,6 @@ def predict_footprint(green, blue, grey):
         return None
     coef_green, coef_blue, coef_grey, intercept = row
     return round(coef_green*green + coef_blue*blue + coef_grey*grey + intercept, 2)
+
+if __name__ == "__main__":
+    train_hybrid_models()

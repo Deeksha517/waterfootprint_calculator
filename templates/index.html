@@ -27,13 +27,12 @@ body {
   overflow-x: hidden;
 }
 
-/* Sidebar Styling */
 .st-sidebar {
-  width: 330px; /* fixed width */
+  width: 330px;
   background-color: var(--bg-sidebar);
   padding: 2rem 1.5rem;
   flex-shrink: 0;
-  min-height: 100vh; /* full vertical length */
+  min-height: 100vh;
 }
 
 .st-main {
@@ -62,22 +61,18 @@ body {
   color: #ff4b4b;
 }
 
-/* Recommendation colors */
 .recommend-accept { color: var(--success-text); font-weight: 500; }
 .recommend-switch { color: #ffc107; font-weight: 500; }
 
-/* Process list styling */
 .process-item {
   cursor: pointer;
   padding: 4px 6px;
   border-radius: 4px;
   transition: background-color 0.2s;
 }
-.process-item:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-}
+.process-item:hover { background-color: rgba(255, 255, 255, 0.1); }
 .process-item.selected {
-  background-color: rgba(80, 205, 137, 0.3); /* green highlight */
+  background-color: rgba(80, 205, 137, 0.3);
   border-left: 3px solid #50cd89;
 }
 </style>
@@ -106,8 +101,8 @@ body {
       <input type="text" id="processSearch" class="form-control mb-2" 
              placeholder="🔍 Search processes..." onkeyup="filterProcesses()">
 
-      <!-- Full list, no scroll -->
-      <div id="processList" style="border: 1px solid var(--border-color); border-radius: 4px; padding: 0.5rem;">
+      <!-- Scrollable list showing ~10 items -->
+      <div id="processList" style="max-height: 250px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 4px; padding: 0.5rem;">
         {% for p in processes %}
         <div class="process-item mb-1" onclick="toggleProcess('{{ p }}')">
           {{ p }}
@@ -139,7 +134,7 @@ body {
         <tr>
           <th>Material</th><th>Weight (kg)</th><th>Processes</th>
           <th>Green (L)</th><th>Blue (L)</th><th>Grey (L)</th>
-          <th>Overhead (L)</th><th>Total WF (L)</th><th>Recommendation</th>
+          <th>Overhead (L)</th><th>Total WF (L)</th><th>Recommendation</th><th>Action</th>
         </tr>
       </thead>
       <tbody>
@@ -162,11 +157,34 @@ body {
               {{ item.Recommendation }}
             {% endif %}
           </td>
+          <td>
+            <form method="POST" action="/" style="margin:0;">
+              <button type="submit" name="delete_index" value="{{ loop.index0 }}" class="btn btn-sm btn-danger">🗑️ Delete</button>
+            </form>
+          </td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
+
+  <!-- Visualization placeholders -->
+  {% if chart1 or chart2 or chart3 or chart4 %}
+  <div class="row mt-4">
+    <div class="col-md-6 mb-3">
+      <img src="data:image/png;base64,{{ chart1 }}" class="img-fluid" alt="Batch Doughnut Chart">
+    </div>
+    <div class="col-md-6 mb-3">
+      <img src="data:image/png;base64,{{ chart2 }}" class="img-fluid" alt="Stacked Components Chart">
+    </div>
+    <div class="col-md-6 mb-3">
+      <img src="data:image/png;base64,{{ chart3 }}" class="img-fluid" alt="Waterfall Chart">
+    </div>
+    <div class="col-md-6 mb-3">
+      <img src="data:image/png;base64,{{ chart4 }}" class="img-fluid" alt="Radar Chart">
+    </div>
+  </div>
+  {% endif %}
 </div>
 
 <script>
